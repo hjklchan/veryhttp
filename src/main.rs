@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Ok, Result};
 use clap::{Parser, Subcommand};
+use colored::Colorize;
 use mime::Mime;
 use reqwest::{header, Client, Response, Url};
 use std::{collections::HashMap, str::FromStr};
@@ -99,7 +100,6 @@ async fn main() -> Result<()> {
 
     // Error handing, dep: anyhow
 
-    println!("Hello, world!");
     Ok(())
 }
 
@@ -107,9 +107,7 @@ async fn get_handler(client: Client, args: &Get) -> Result<()> {
     // Initiate a request client
     let resp: Response = client.get::<&str>(args.url.as_ref()).send().await?;
     // Output the response text
-    println!("{:?}", resp.text().await?);
-
-    Ok(())
+    Ok(print_resp(resp).await?)
 }
 
 async fn post_handler(client: Client, args: &Post) -> Result<()> {
@@ -125,12 +123,10 @@ async fn post_handler(client: Client, args: &Post) -> Result<()> {
         .send()
         .await?;
 
-    println!("{:?}", resp.text().await?);
-
-    Ok(())
+    Ok(print_resp(resp).await?)
 }
 
-/// ## get_content_type 
+/// ## get_content_type
 ///
 /// get content type from response
 fn get_content_type(resp: &Response) -> Option<Mime> {
@@ -139,27 +135,47 @@ fn get_content_type(resp: &Response) -> Option<Mime> {
         .map(|value| value.to_str().unwrap().parse().unwrap())
 }
 
-/// print_status 
+/// print_status
 /// TODO: Make the formatting more pretty..
-/// 
+///
 /// print version and http status code
-fn print_status(resp: &Response) {}
+fn print_status(resp: &Response) {
+    let status = format!("{:?} {}", resp.version(), resp.status().as_str().blue());
+    println!("{}\n", status);
+}
 
-/// print_headers 
+/// print_headers
 /// TODO: Make the formatting more pretty..
-/// 
+///
 /// print headers of response
-fn print_headers(resp: &Response) {}
+fn print_headers(resp: &Response) {
+    for (k, v) in resp.headers().into_iter() {
+        // TODO: This line should be optimistic**.
+        println!("{} = {:?}", (k.as_ref() as &str).green(), v);
+    }
+    print!("\n");
+}
 
-/// print_body 
+/// print_body
 /// TODO: Make the formatting more pretty..
-/// 
+///
 /// print body of response
-fn print_body(resp: &Response) {}
+fn print_body(m: Option<Mime>, body: &String) {
+    match m {
+        // if body type is json
+        Some(v) if v == mime::APPLICATION_JSON => println!("{}", jsonxf::pretty_print(body).unwrap().cyan()),
+        // or else direct output html
+        _ => println!("{}", body),
+    }
+}
 
 async fn print_resp(resp: Response) -> Result<()> {
     print_status(&resp);
     print_headers(&resp);
+
+    let mime = get_content_type(&resp);
+    let body = resp.text().await?;
+    print_body(mime, &body);
 
     Ok(())
 }
