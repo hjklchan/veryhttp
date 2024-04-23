@@ -165,7 +165,7 @@ fn print_body(m: Option<Mime>, body: &String) {
         // if body type is json
         Some(v) if v == mime::APPLICATION_JSON => println!("{}", jsonxf::pretty_print(body).unwrap().cyan()),
         // or else direct output html
-        _ => println!("{}", body),
+        _ => println!("{}", body.purple()),
     }
 }
 
