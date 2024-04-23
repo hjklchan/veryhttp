@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Ok, Result};
 use clap::{Parser, Subcommand};
-use reqwest::{Client, Url};
+use reqwest::{header, Client, Url};
 use std::{collections::HashMap, str::FromStr};
 
 #[derive(Parser, Debug)]
@@ -82,7 +82,7 @@ fn parse_url(s: &str) -> Result<String> {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     // Introduce tokio to process async, dep: tokio
 
     // Parse command, dep: clap
@@ -90,8 +90,12 @@ async fn main() {
     println!("{:?}", cli);
 
     // Request target url, dep: reqwest
+    // initial and add some http headers
+    let mut headers = header::HeaderMap::new();
+    headers.insert("X-POWERED-BY", "Rust Http Cli".parse()?);
+    headers.insert(header::USER_AGENT, "Veryhttp by Rust".parse()?);
     // create a new http client
-    let client = Client::new();
+    let client = Client::builder().default_headers(headers).build()?;
     // match each subcommands
     let result = match cli.subcmd {
         Subcommands::Get(ref fields) => get_handler(client, fields).await,
@@ -104,6 +108,7 @@ async fn main() {
     // Error handing, dep: anyhow
 
     println!("Hello, world!");
+    Ok(())
 }
 
 async fn get_handler(client: Client, args: &Get) -> Result<()> {
