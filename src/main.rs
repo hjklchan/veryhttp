@@ -80,7 +80,6 @@ async fn main() -> Result<()> {
 
     // Parse command, dep: clap
     let cli: Cli = Cli::parse();
-    println!("{:?}", cli);
 
     // Request target url, dep: reqwest
     // initial and add some http headers
