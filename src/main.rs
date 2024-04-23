@@ -1,29 +1,21 @@
 use anyhow::{anyhow, Ok, Result};
 use clap::{Parser, Subcommand};
-use reqwest::{header, Client, Url};
+use mime::Mime;
+use reqwest::{header, Client, Response, Url};
 use std::{collections::HashMap, str::FromStr};
 
 #[derive(Parser, Debug)]
+#[clap(version)]
 struct Cli {
     #[clap(subcommand)]
     subcmd: Subcommands,
 }
 
-/// ## Subcommands
-///
-/// Request methods
-/// ```bash
-/// cargo run post http://localhost name=hjkl1
-/// cargo run get http://localhost
-///
-/// ./veryhttp.exe post http://localhost name=hjkl1
-/// ./veryhttp.exe get http://localhost
-/// ```
 #[derive(Subcommand, Debug)]
 enum Subcommands {
     Get(Get),
     Post(Post),
-    // TODO: Will support as bellow methods in the following.
+    // TODO: The following will support as below methods in the future.
     // Put(()),
     // Delete(()),
     // Patch(()),
@@ -113,7 +105,7 @@ async fn main() -> Result<()> {
 
 async fn get_handler(client: Client, args: &Get) -> Result<()> {
     // Initiate a request client
-    let resp = client.get::<&str>(args.url.as_ref()).send().await?;
+    let resp: Response = client.get::<&str>(args.url.as_ref()).send().await?;
     // Output the response text
     println!("{:?}", resp.text().await?);
 
@@ -134,6 +126,40 @@ async fn post_handler(client: Client, args: &Post) -> Result<()> {
         .await?;
 
     println!("{:?}", resp.text().await?);
+
+    Ok(())
+}
+
+/// ## get_content_type 
+///
+/// get content type from response
+fn get_content_type(resp: &Response) -> Option<Mime> {
+    resp.headers()
+        .get(header::CONTENT_TYPE)
+        .map(|value| value.to_str().unwrap().parse().unwrap())
+}
+
+/// print_status 
+/// TODO: Make the formatting more pretty..
+/// 
+/// print version and http status code
+fn print_status(resp: &Response) {}
+
+/// print_headers 
+/// TODO: Make the formatting more pretty..
+/// 
+/// print headers of response
+fn print_headers(resp: &Response) {}
+
+/// print_body 
+/// TODO: Make the formatting more pretty..
+/// 
+/// print body of response
+fn print_body(resp: &Response) {}
+
+async fn print_resp(resp: Response) -> Result<()> {
+    print_status(&resp);
+    print_headers(&resp);
 
     Ok(())
 }
